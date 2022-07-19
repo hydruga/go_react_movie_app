@@ -1,0 +1,104 @@
+//import { getByDisplayValue } from '@testing-library/react';
+import React, { Component, Fragment } from 'react';
+import { useParams } from 'react-router-dom';
+
+export default (props) => (
+        <OneMovie 
+            {...props}
+            params={useParams()}
+        />
+)
+// 🤖 ☝️ important wrapper for react-v6 hooks to pass { id } param correctly
+// https://stackoverflow.com/questions/58548767/react-router-dom-useparams-inside-class-component
+    class OneMovie extends Component {
+    state = { movie: {}, isLoaded: false, error: null };
+    
+    componentDidMount(){
+        const { id } = this.props.params;
+        fetch("http://localhost:4000/v1/movie/" + id)
+        .then((response) => { 
+            if (response.status !== "200") {
+                let err = Error;
+                err.message = "Invalid response code : " + response.status;
+                this.setState({
+                    error: err
+                });
+                return response.json();
+            }
+        }) 
+       .then((json)=> {
+            this.setState(
+                {
+                movie: json.movie,
+                isLoaded: true,
+            },
+            (error) => { this.setState({
+                isLoaded: true,
+                error
+                });
+            }
+            );
+       });
+    }
+    render (){
+
+        const { movie, isLoaded, error } = this.state;
+
+        if (movie.genres){
+            movie.genres = Object.values(movie.genres);
+        } else {
+            movie.genres = [];
+        }
+        if (error){
+            return <div> Error: {error.message} </div>
+        }
+        else if (!isLoaded){
+            return <p> Loading ...</p>
+        } else {
+        return (
+
+            <Fragment>
+                <h2>
+                    Movie: { movie.title } ({ movie.year }) 
+                </h2>
+                    <div className='float-start'>
+                        <small> Rating: {movie.mpaa_rating}</small>
+                    </div>
+                    {/* <div className='float-end'>
+                        { movie.genres.map((m, index) => {
+                            <span className="badge bg-secondary me-1" key={index}>
+                                {m}
+                            </span>
+                        })}
+                    </div> */}
+                    <div className='float-end'></div>
+                    <div className='clearfix'></div>
+
+                    <hr />
+
+                <table className="table table-compact table-striped">
+                    <thead></thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Title: </strong></td>
+                            <td>{movie.title}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description: </strong></td>
+                            <td>{movie.description}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Runtime: </strong></td>
+                            <td>{movie.runtime} minutes</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </Fragment>
+        );
+    }
+    }
+}
+
+
+
+
